@@ -33,11 +33,14 @@ enum LineStyle : Int {
 	case none
 	case italic
 	case bold
+    case boldItalic
 	case code
 	case link
 	
 	static func styleFromString(_ string : String ) -> LineStyle {
-		if string == "**" || string == "__" {
+        if string == "***" || string == "___" {
+            return .boldItalic
+        } else if string == "**" || string == "__" {
 			return .bold
 		} else if string == "*" || string == "_" {
 			return .italic
@@ -83,6 +86,9 @@ open class SwiftyMarkdown {
 	
 	/// The styles to apply to any italic text found in the Markdown
 	open var italic = BasicStyles()
+    
+    /// The styles to apply for any bold italic text found in the Markdown
+    open var boldItalic = BasicStyles()
 	
 	/// The styles to apply to any code blocks or inline code text found in the Markdown
 	open var code = BasicStyles()
@@ -405,7 +411,14 @@ open class SwiftyMarkdown {
 			}
 			
 		}
-		
+        
+        if style == .boldItalic {
+            if let boldItalicDescriptor = finalFontDescriptor.withSymbolicTraits([ .traitBold, .traitItalic ]) {
+                finalFont = UIFont(descriptor: boldItalicDescriptor, size: styleSize)
+            }
+
+        }
+        
 		
 		attributes[NSFontAttributeName] = finalFont
 		
