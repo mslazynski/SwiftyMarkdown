@@ -27,6 +27,7 @@ if let url = NSBundle.mainBundle().URLForResource("file", withExtension: "md"), 
 
     *italics* or _italics_
     **bold** or __bold__
+    ***bold italic*** or ___bold italic___
 
     # Header 1
     ## Header 2
