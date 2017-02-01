@@ -26,7 +26,7 @@ public struct BasicStyles : FontProperties {
 }
 
 enum LineType : Int {
-    case h1, h2, h3, h4, h5, h6, body
+    case h1, h2, h3, h4, h5, h6, body, bullet
 }
 
 enum LineStyle : Int {
@@ -93,6 +93,8 @@ open class SwiftyMarkdown {
     /// The styles to apply to any code blocks or inline code text found in the Markdown
     open var code = BasicStyles()
     
+    /// Bullet list styles
+    open var bullet = BasicStyles()
     
     var currentType : LineType = .body
     
@@ -171,18 +173,30 @@ open class SwiftyMarkdown {
             if lineCount  < lines.count {
                 let nextLine = lines[lineCount]
                 
-                if let range = nextLine.range(of: "=") , range.lowerBound == nextLine.startIndex {
+                if  matches(for: "^(=+)$", in: nextLine) {
                     // Make H1
                     currentType = .h1
                     // We need to skip the next line
                     skipLine = true
                 }
                 
-                if let range = nextLine.range(of: "-") , range.lowerBound == nextLine.startIndex {
+                if  matches(for: "^(-+)$", in: nextLine) {
                     // Make H2
                     currentType = .h2
                     // We need to skip the next line
                     skipLine = true
+                }
+            }
+            
+            // Look for lists
+            let bulletMarkers = ["* ", "+ ", "- "]
+            
+            for marker in bulletMarkers {
+                if let range =  line.range(of: marker) , range.lowerBound == line.startIndex {
+                    
+                    line = line.replacingCharacters(in: range, with: "•\t")
+                    currentType = .bullet
+                    break
                 }
             }
             
@@ -361,6 +375,21 @@ open class SwiftyMarkdown {
             fontName = h6.fontName
             textStyle = UIFontTextStyle.footnote
             attributes[NSForegroundColorAttributeName] = h6.color
+        case .bullet:
+            fontName = bullet.fontName
+            textStyle = UIFontTextStyle.body
+            attributes[NSForegroundColorAttributeName] = bullet.color
+            
+            let bulletedListStyle = { () -> NSMutableParagraphStyle in
+                let paragraphStyle = NSMutableParagraphStyle();
+                paragraphStyle.tabStops = [NSTextTab(textAlignment: NSTextAlignment.left, location: 15, options: [:])]
+                paragraphStyle.defaultTabInterval = 15
+                paragraphStyle.firstLineHeadIndent = 0
+                paragraphStyle.headIndent = 15
+                return paragraphStyle
+            }()
+            
+            attributes[NSParagraphStyleAttributeName] = bulletedListStyle
         default:
             fontName = body.fontName
             textStyle = UIFontTextStyle.body
@@ -435,5 +464,19 @@ open class SwiftyMarkdown {
         attributes[NSFontAttributeName] = finalFont
         
         return NSAttributedString(string: string, attributes: attributes)
+    }
+}
+
+//Helper functions
+
+private func matches(for regex: String, in text: String) -> Bool {
+    do {
+        let regex = try NSRegularExpression(pattern: regex)
+        let nsString = text as NSString
+        let result = regex.numberOfMatches(in: text, range: NSRange(location: 0, length: nsString.length))
+        return Bool(result as NSNumber)
+    } catch let error {
+        print("invalid regex: \(error.localizedDescription)")
+        return false
     }
 }
